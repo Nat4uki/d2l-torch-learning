@@ -324,4 +324,5 @@ $RECYCLE.BIN/
 *.lnk
 
 pytorch/data/
+pytorch/models/
 # End of https://www.toptal.com/developers/gitignore/api/windows,pycharm,python,jupyternotebooks
