@@ -159,7 +159,8 @@ def train_ch6(net, train_iter, test_iter, num_epochs, lr, device, save_path=None
     #                         legend=['train loss', 'train acc', 'test acc'])
     timer, num_batches = d2l.Timer(), len(train_iter)
 
-    best_test_acc = 0
+    best_test_acc = evaluate_accuracy_gpu(net, test_iter)
+    print(f"pretrain test acc: {best_test_acc}")
 
     for epoch in range(num_epochs):
         # 训练损失之和，训练准确率之和，样本数
