@@ -161,7 +161,7 @@ def train_ch6(net, train_iter, test_iter, num_epochs, lr, device, save_path=None
     print('training on', device)
     net.to(device)
     optimizer = torch.optim.SGD(net.parameters(), lr=lr)
-    loss = nn.CrossEntropyLoss()
+    loss_f = nn.CrossEntropyLoss()
     # animator = d2l.Animator(xlabel='epoch', xlim=[1, num_epochs],
     #                         legend=['train loss', 'train acc', 'test acc'])
     timer, num_batches = d2l.Timer(), len(train_iter)
@@ -187,7 +187,7 @@ def train_ch6(net, train_iter, test_iter, num_epochs, lr, device, save_path=None
                 optimizer.zero_grad()
                 X, y = X.to(device), y.to(device)
                 y_hat = net(X)
-                loss = loss(y_hat, y)
+                loss = loss_f(y_hat, y)
                 loss.backward()
                 optimizer.step()
                 with torch.no_grad():
