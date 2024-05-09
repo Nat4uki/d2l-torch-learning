@@ -5,6 +5,8 @@ from d2l import torch as d2l
 import datetime
 import os
 from tqdm import tqdm
+
+
 def accuracy(y_hat, y):  #@save
     """计算预测正确的数量"""
     if len(y_hat.shape) > 1 and y_hat.shape[1] > 1:
@@ -12,8 +14,10 @@ def accuracy(y_hat, y):  #@save
     cmp = y_hat.type(y.dtype) == y
     return float(cmp.type(y.dtype).sum())
 
+
 class Accumulator:  #@save
     """在n个变量上累加"""
+
     def __init__(self, n):
         self.data = [0.0] * n
 
@@ -26,6 +30,7 @@ class Accumulator:  #@save
     def __getitem__(self, idx):
         return self.data[idx]
 
+
 def evaluate_accuracy(net, data_iter):  #@save
     """计算在指定数据集上模型的精度"""
     if isinstance(net, torch.nn.Module):
@@ -37,8 +42,10 @@ def evaluate_accuracy(net, data_iter):  #@save
             metric.add(accuracy(net(X), y), y.numel())
     return metric[0] / metric[1]
 
+
 class Animator:  #@save
     """在动画中绘制数据"""
+
     def __init__(self, xlabel=None, ylabel=None, legend=None, xlim=None,
                  ylim=None, xscale='linear', yscale='linear',
                  fmts=('-', 'm--', 'g-.', 'r:'), nrows=1, ncols=1,
@@ -76,6 +83,8 @@ class Animator:  #@save
         self.config_axes()
         display.display(self.fig)
         display.clear_output(wait=True)
+
+
 def train_epoch_ch3(net, train_iter, loss, updater):  #@save
     """训练模型一个迭代周期（定义见第3章）"""
     # 将模型设置为训练模式
@@ -101,6 +110,7 @@ def train_epoch_ch3(net, train_iter, loss, updater):  #@save
     # 返回训练损失和训练精度
     return metric[0] / metric[2], metric[1] / metric[2]
 
+
 def train_ch3(net, train_iter, test_iter, loss, num_epochs, updater):  #@save
     """训练模型（定义见第3章）"""
     animator = Animator(xlabel='epoch', xlim=[1, num_epochs], ylim=[0.3, 0.9],
@@ -114,7 +124,9 @@ def train_ch3(net, train_iter, test_iter, loss, num_epochs, updater):  #@save
     assert train_acc <= 1 and train_acc > 0.7, train_acc
     assert test_acc <= 1 and test_acc > 0.7, test_acc
     print(f"train_loss：{train_loss}, train_acc:{train_acc}, test_acc:{test_acc}")
-def evaluate_accuracy_gpu(net, data_iter, device=None): #@save
+
+
+def evaluate_accuracy_gpu(net, data_iter, device=None):  #@save
     """使用GPU计算模型在数据集上的精度"""
     if isinstance(net, nn.Module):
         net.eval()  # 设置为评估模式
@@ -132,21 +144,16 @@ def evaluate_accuracy_gpu(net, data_iter, device=None): #@save
             y = y.to(device)
             metric.add(d2l.accuracy(net(X), y), y.numel())
     return metric[0] / metric[1]
+
+
 def train_ch6(net, train_iter, test_iter, num_epochs, lr, device, save_path=None, load_dir=None):
-    """用GPU训练模型(在第六章定义)"""
     def init_weights(m):
         if type(m) == nn.Linear or type(m) == nn.Conv2d:
             nn.init.xavier_uniform_(m.weight)
 
-    if load_dir:
-        net.load_state_dict(torch.load(load_dir))
-        print(f"load model from {load_dir}")
-    else:
-        net.apply(init_weights)
-        print("new model")
-
+    model_path = ""
     if save_path:
-        current_time = datetime.datetime.now().strftime("%m%d%H%M%S")
+        current_time = datetime.datetime.now().strftime("%m-%d-%H-%M-%S")
         directory = os.path.join(save_path, current_time)
         os.makedirs(directory, exist_ok=True)  # 创建目录
         model_path = os.path.join(directory, 'best.ckpt')
@@ -159,8 +166,15 @@ def train_ch6(net, train_iter, test_iter, num_epochs, lr, device, save_path=None
     #                         legend=['train loss', 'train acc', 'test acc'])
     timer, num_batches = d2l.Timer(), len(train_iter)
 
-    best_test_acc = evaluate_accuracy_gpu(net, test_iter)
-    print(f"pretrain test acc: {best_test_acc}")
+    best_test_acc = 0
+    if load_dir:
+        net.load_state_dict(torch.load(load_dir))
+        print(f"load model from {load_dir}")
+        best_test_acc = evaluate_accuracy_gpu(net, test_iter)
+        print(f"pretrain test acc: {best_test_acc}")
+    else:
+        net.apply(init_weights)
+        print("new model")
 
     for epoch in range(num_epochs):
         # 训练损失之和，训练准确率之和，样本数
@@ -173,11 +187,11 @@ def train_ch6(net, train_iter, test_iter, num_epochs, lr, device, save_path=None
                 optimizer.zero_grad()
                 X, y = X.to(device), y.to(device)
                 y_hat = net(X)
-                l = loss(y_hat, y)
-                l.backward()
+                loss = loss(y_hat, y)
+                loss.backward()
                 optimizer.step()
                 with torch.no_grad():
-                    metric.add(l * X.shape[0], d2l.accuracy(y_hat, y), X.shape[0])
+                    metric.add(loss * X.shape[0], d2l.accuracy(y_hat, y), X.shape[0])
                 timer.stop()
                 pbar.update(batch_size)
                 train_l = metric[0] / metric[2]
